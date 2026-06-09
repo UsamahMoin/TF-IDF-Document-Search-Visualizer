@@ -4,7 +4,7 @@ This project implements an `ltc.lnc` vector-space retrieval model over 15 early
 U.S. presidential inaugural addresses. It includes the original Python and
 Jupyter Notebook implementation plus an interactive GitHub Pages visualizer.
 
-Live page: https://usamahmoin.github.io/Data-Mining-1/
+Live page: https://usamahmoin.github.io/TF-IDF-Document-Search-Visualizer/
 
 ## What the visualizer shows
 
