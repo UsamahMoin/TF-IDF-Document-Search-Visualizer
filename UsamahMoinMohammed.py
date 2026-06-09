@@ -20,7 +20,12 @@ for filename in os.listdir(corpusroot):
         except Exception as e:
             print(f"Error caught while reading the file")
 
-tokenizer, stop_words = RegexpTokenizer(r'[a-zA-Z]+'), set(stopwords.words('english'))
+tokenizer = RegexpTokenizer(r'[a-zA-Z]+')
+try:
+    stop_words = set(stopwords.words('english'))
+except LookupError:
+    from tools.build_corpus_index import STOP_WORDS
+    stop_words = STOP_WORDS
 
 tokenized_documents = {}
 for filename, content in documents.items():

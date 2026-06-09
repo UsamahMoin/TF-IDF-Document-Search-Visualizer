@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive ltc.lnc TF-IDF search visualization over 15 early U.S. presidential inaugural addresses.">
+  <title>TF-IDF Document Search Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <div class="page-shell">
+    <main>
+      <section class="intro">
+        <h1>Search history as a vector space.</h1>
+        <p>
+          This project ranks 15 early U.S. inaugural addresses using tokenization,
+          stop-word removal, Porter stemming, TF-IDF weighting, and cosine similarity.
+          Enter a query to inspect every stage of the actual <code>ltc.lnc</code> retrieval model.
+        </p>
+      </section>
+
+      <section class="search-section">
+        <div class="query-card card">
+          <form class="query-form" id="query-form">
+            <label for="query-input">Search the inaugural address corpus</label>
+            <div class="query-row">
+              <input
+                id="query-input"
+                name="query"
+                type="search"
+                value="british war"
+                autocomplete="off"
+                spellcheck="true"
+                aria-describedby="query-help"
+              >
+              <button class="button button-primary" type="submit">Rank documents</button>
+            </div>
+            <p id="query-help">Queries are weighted with logarithmic term frequency and cosine normalization.</p>
+          </form>
+
+          <div class="preset-row" aria-label="Example queries">
+            <span>Try an assignment query</span>
+            <button class="query-chip" type="button" data-query="pleasing people">pleasing people</button>
+            <button class="query-chip is-active" type="button" data-query="british war">british war</button>
+            <button class="query-chip" type="button" data-query="false public">false public</button>
+            <button class="query-chip" type="button" data-query="people institutions">people institutions</button>
+            <button class="query-chip" type="button" data-query="violated willingly">violated willingly</button>
+          </div>
+        </div>
+
+        <div class="metrics-grid" aria-label="Corpus statistics">
+          <article class="metric-card card">
+            <span>Documents</span>
+            <strong id="metric-documents">15</strong>
+            <small>inaugural addresses</small>
+          </article>
+          <article class="metric-card card">
+            <span>Raw words</span>
+            <strong id="metric-words">40,382</strong>
+            <small>before preprocessing</small>
+          </article>
+          <article class="metric-card card">
+            <span>Indexed terms</span>
+            <strong id="metric-indexed">18,713</strong>
+            <small>after stop-word removal</small>
+          </article>
+          <article class="metric-card card">
+            <span>Vocabulary</span>
+            <strong id="metric-vocabulary">2,953</strong>
+            <small>unique Porter stems</small>
+          </article>
+        </div>
+
+        <div class="workbench-grid">
+          <aside class="pipeline-card card">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Query pipeline</p>
+                <h2>From words to weights</h2>
+              </div>
+              <span class="scheme-badge">lnc</span>
+            </div>
+
+            <div class="pipeline">
+              <article class="pipeline-step">
+                <span class="step-marker">A</span>
+                <div>
+                  <strong>Tokenize</strong>
+                  <p>Keep alphabetic sequences and lowercase them.</p>
+                  <div class="token-list" id="raw-tokens"></div>
+                </div>
+              </article>
+              <article class="pipeline-step">
+                <span class="step-marker">B</span>
+                <div>
+                  <strong>Remove stop words</strong>
+                  <p>Discard terms from NLTK’s 179-word English list.</p>
+                  <div class="token-list" id="filtered-tokens"></div>
+                </div>
+              </article>
+              <article class="pipeline-step">
+                <span class="step-marker">C</span>
+                <div>
+                  <strong>Porter stem</strong>
+                  <p>Reduce inflected words to indexing stems.</p>
+                  <div class="token-list stem-list" id="stemmed-tokens"></div>
+                </div>
+              </article>
+              <article class="pipeline-step">
+                <span class="step-marker">D</span>
+                <div>
+                  <strong>Normalize query vector</strong>
+                  <p><code>(1 + log<sub>10</sub> tf) / ||q||</code></p>
+                  <div class="weight-list" id="query-weights"></div>
+                </div>
+              </article>
+            </div>
+          </aside>
+
+          <section class="ranking-card card">
+            <div class="panel-heading ranking-heading">
+              <div>
+                <p class="eyebrow">Ranked retrieval</p>
+                <h2>Cosine similarity results</h2>
+              </div>
+              <div class="ranking-summary">
+                <strong id="best-score">0.0000</strong>
+                <span>top score</span>
+              </div>
+            </div>
+            <div class="ranking-note" id="ranking-note" aria-live="polite">
+              Loading the corpus index…
+            </div>
+            <div class="result-list" id="result-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="corpus-section section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Corpus overview</p>
+            <h2>Fifteen addresses across fifty-six years.</h2>
+          </div>
+          <p>
+            Bar height represents raw word count. Select an address to inspect its
+            normalized document terms and source excerpt.
+          </p>
+        </div>
+
+        <div class="corpus-card card">
+          <div class="timeline-chart" id="timeline-chart" aria-label="Document length by inaugural address"></div>
+          <div class="document-inspector" id="document-inspector">
+            <div class="document-meta">
+              <span id="document-year">1789</span>
+              <div>
+                <h3 id="document-president">George Washington</h3>
+                <p id="document-filename">01_washington_1789.txt</p>
+              </div>
+            </div>
+            <div class="document-stats">
+              <div><strong id="document-words">1,431</strong><span>raw words</span></div>
+              <div><strong id="document-indexed">687</strong><span>indexed tokens</span></div>
+              <div><strong id="document-unique">357</strong><span>unique stems</span></div>
+            </div>
+            <p class="document-excerpt" id="document-excerpt"></p>
+            <div class="top-terms">
+              <span>Highest normalized term weights</span>
+              <div id="document-top-terms"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="term-section section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Term inspector</p>
+            <h2>See why rare terms carry more information.</h2>
+          </div>
+          <p>
+            IDF increases as document frequency falls. The chart shows each document’s
+            final normalized <code>ltc</code> weight for the selected term.
+          </p>
+        </div>
+
+        <div class="term-layout">
+          <div class="term-controls card">
+            <label for="term-input">Inspect a corpus term</label>
+            <div class="term-input-row">
+              <input id="term-input" type="search" value="union" autocomplete="off">
+              <button class="button button-primary" id="inspect-term" type="button">Inspect</button>
+            </div>
+            <div class="term-conversion">
+              <span>Index form</span>
+              <strong id="term-stem">union → union</strong>
+            </div>
+            <div class="term-metrics">
+              <div><span>Document frequency</span><strong id="term-df">13 / 15</strong></div>
+              <div><span>Collection frequency</span><strong id="term-cf">83</strong></div>
+              <div><span>Inverse document frequency</span><strong id="term-idf">0.062148</strong></div>
+            </div>
+            <code class="formula-inline" id="idf-formula">log10(15 / 13) = 0.062148</code>
+          </div>
+          <div class="term-chart-card card">
+            <div class="chart-heading">
+              <strong>Normalized document weight</strong>
+              <span id="term-chart-caption">13 documents contain “union”</span>
+            </div>
+            <div class="term-chart" id="term-chart"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="model-section section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Weighting model</p>
+            <h2>What <code>ltc.lnc</code> means.</h2>
+          </div>
+          <p>
+            SMART notation independently specifies term frequency, document frequency,
+            and normalization for document and query vectors.
+          </p>
+        </div>
+
+        <div class="model-grid">
+          <article class="model-card card">
+            <div class="model-label">
+              <span>Document vector</span>
+              <strong>ltc</strong>
+            </div>
+            <div class="model-components">
+              <div><code>l</code><span>logarithmic TF</span><small>1 + log<sub>10</sub>(tf)</small></div>
+              <div><code>t</code><span>logarithmic IDF</span><small>log<sub>10</sub>(N / df)</small></div>
+              <div><code>c</code><span>cosine normalization</span><small>weight / ||d||</small></div>
+            </div>
+          </article>
+          <article class="model-card card">
+            <div class="model-label">
+              <span>Query vector</span>
+              <strong>lnc</strong>
+            </div>
+            <div class="model-components">
+              <div><code>l</code><span>logarithmic TF</span><small>1 + log<sub>10</sub>(tf)</small></div>
+              <div><code>n</code><span>no IDF factor</span><small>global weight = 1</small></div>
+              <div><code>c</code><span>cosine normalization</span><small>weight / ||q||</small></div>
+            </div>
+          </article>
+          <article class="similarity-card card">
+            <span>Final similarity</span>
+            <strong>score(d, q) = d · q</strong>
+            <p>
+              Because both vectors are normalized, their dot product is cosine similarity.
+              Matching terms contribute in proportion to both query and document weight.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="references-section section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Research foundation</p>
+            <h2>Primary sources behind the model.</h2>
+          </div>
+          <p>
+            The implementation follows foundational work on vector-space retrieval,
+            automatic term weighting, and suffix stripping.
+          </p>
+        </div>
+        <div class="reference-grid">
+          <a class="reference-card card" href="https://cacm.acm.org/magazines/1975/11/11517-a-vector-space-model-for-automatic-indexing/pdf" target="_blank" rel="noreferrer">
+            <span>Salton, Wong &amp; Yang · 1975</span>
+            <strong>A Vector Space Model for Automatic Indexing</strong>
+            <p>Introduces vector-space document representation and similarity-based retrieval.</p>
+            <i aria-hidden="true">↗</i>
+          </a>
+          <a class="reference-card card" href="https://ecommons.cornell.edu/items/d81a71f9-8de9-4ef1-9ee2-8544cdb48372" target="_blank" rel="noreferrer">
+            <span>Salton &amp; Buckley · 1988</span>
+            <strong>Term-Weighting Approaches in Automatic Text Retrieval</strong>
+            <p>Defines and evaluates the SMART family of local, global, and normalization choices.</p>
+            <i aria-hidden="true">↗</i>
+          </a>
+          <a class="reference-card card" href="https://doi.org/10.1108/eb046814" target="_blank" rel="noreferrer">
+            <span>Porter · 1980</span>
+            <strong>An Algorithm for Suffix Stripping</strong>
+            <p>Describes the English stemming procedure used to consolidate related word forms.</p>
+            <i aria-hidden="true">↗</i>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>TF-IDF Document Search Visualizer</span>
+      <span>Data Mining Project 1 · CSE 5334</span>
+    </footer>
+  </div>
+
+  <script src="script.js?v=1"></script>
+</body>
+</html>
